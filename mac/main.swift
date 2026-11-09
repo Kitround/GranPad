@@ -632,7 +632,7 @@ final class Session {
         descriptor.maxPixelsWide = UInt32(largest.width * 2)  // room for every size drawn at 2x (smoothing)
         descriptor.maxPixelsHigh = UInt32(largest.height * 2)
         descriptor.sizeInMillimeters = CGSize(width: 160, height: 120)
-        descriptor.vendorID = 0x5350  // "SP", from the old name: kept so macOS keeps the display's arrangement
+        descriptor.vendorID = 0x4750  // "GP"
         descriptor.productID = 1
         descriptor.serialNum = 1
         let settings = CGVirtualDisplaySettings()
