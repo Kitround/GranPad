@@ -1,30 +1,32 @@
 """Packs the iPad app and the backlight tweak into one .deb inside a flat Cydia source, without dpkg.
-Usage: python3 -I ipad/package.py <ScreenPad.app> <ScreenPadBacklight.dylib> <source icon.png> <repo dir>
+Usage: python3 -I ipad/package.py <GranPad.app> <GranPadBacklight.dylib> <source icon.png> <repo dir>
 The repo dir is what gets published (GitHub Pages, gh-pages branch): add its URL as a source in Cydia."""
 import bz2, gzip, hashlib, io, plistlib, sys, tarfile, time
 from pathlib import Path
 
 app, tweak, icon, repo = map(Path, sys.argv[1:5])
 VERSION = plistlib.loads((app / "Info.plist").read_bytes())["CFBundleShortVersionString"]
-CONTROL = f"""Package: fr.krnd.screenpad
-Name: ScreenPad
+CONTROL = f"""Package: fr.krnd.granpad
+Name: GranPad
 Version: {VERSION}
 Architecture: iphoneos-arm
 Depends: mobilesubstrate, uikittools
+Conflicts: fr.krnd.screenpad
+Replaces: fr.krnd.screenpad
 Section: Utilities
 Maintainer: Kitround
 Author: Kitround
-Homepage: https://github.com/Kitround/ScreenPad
-Description: Use the iPad as an extra display for your Mac, over USB. Needs the ScreenPad Mac app.
+Homepage: https://github.com/Kitround/GranPad
+Description: Use the iPad as an extra display for your Mac, over USB. Needs the GranPad Mac app.
 """
-RELEASE = """Origin: ScreenPad
-Label: ScreenPad
+RELEASE = """Origin: GranPad
+Label: GranPad
 Suite: stable
 Version: 1.0
 Codename: ios
 Architectures: iphoneos-arm
 Components: main
-Description: ScreenPad, an iPad as an extra display for the Mac
+Description: GranPad, an iPad as an extra display for the Mac
 """
 # Registers the app on the home screen; tells Cydia to restart SpringBoard, which loads the tweak.
 POSTINST = b"""#!/bin/sh
@@ -83,10 +85,10 @@ def ar_members(deb):
     return members
 
 
-data = {LIBRARIES + "ScreenPadBacklight.dylib": (tweak.read_bytes(), 0o755),
-        LIBRARIES + "ScreenPadBacklight.plist": (FILTER, 0o644)}
+data = {LIBRARIES + "GranPadBacklight.dylib": (tweak.read_bytes(), 0o755),
+        LIBRARIES + "GranPadBacklight.plist": (FILTER, 0o644)}
 for file in sorted(p for p in app.rglob("*") if p.is_file()):
-    executable = file.name == "ScreenPad"
+    executable = file.name == "GranPad"
     data[f"./Applications/{app.name}/{file.relative_to(app)}"] = (file.read_bytes(), 0o755 if executable else 0o644)
 deb = ar([
     ("debian-binary", b"2.0\n"),
@@ -97,9 +99,9 @@ deb = ar([
 # Self-check: the archive reads back with the app and the tweak where iOS and Substrate look for them.
 names = tarfile.open(fileobj=io.BytesIO(ar_members(deb)["data.tar.gz"])).getnames()
 assert list(ar_members(deb))[0] == "debian-binary", ar_members(deb).keys()
-assert {LIBRARIES + "ScreenPadBacklight.dylib", "./Applications/ScreenPad.app/ScreenPad"} <= set(names), names
+assert {LIBRARIES + "GranPadBacklight.dylib", "./Applications/GranPad.app/GranPad"} <= set(names), names
 
-name = f"debs/screenpad_{VERSION}_iphoneos-arm.deb"
+name = f"debs/granpad_{VERSION}_iphoneos-arm.deb"
 (repo / "debs").mkdir(parents=True, exist_ok=True)
 for old in (repo / "debs").glob("*.deb"):
     old.unlink()

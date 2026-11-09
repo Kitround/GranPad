@@ -1,4 +1,4 @@
-// ScreenPad — Mac side: a menu bar app that turns a USB-connected iPad into an extra display.
+// GranPad — Mac side: a menu bar app that turns a USB-connected iPad into an extra display.
 // Virtual display -> ScreenCaptureKit -> H.264 (VideoToolbox) -> usbmuxd tunnel -> iPad app.
 // The iPad app is our own (ipad/main.m) or Yam Display from the App Store: both speak the protocol below.
 // The virtual display, capture and encoder only exist while an iPad is connected (see Session).
@@ -86,8 +86,8 @@ enum USBMux {
 
     private static func send(_ fd: Int32, _ message: [String: Any]) throws {
         var message = message
-        message["ProgName"] = "ScreenPad"
-        message["ClientVersionString"] = "ScreenPad"
+        message["ProgName"] = "GranPad"
+        message["ClientVersionString"] = "GranPad"
         let body = try PropertyListSerialization.data(fromPropertyList: message, format: .xml, options: 0)
         // Header: length, version 1, type 8 (plist), tag — all little-endian.
         let header = [UInt32(16 + body.count), 1, 8, 1].flatMap { withUnsafeBytes(of: $0.littleEndian) { Array($0) } }
@@ -116,7 +116,7 @@ enum USBMux {
         try send(fd, ["MessageType": "Connect", "DeviceID": deviceID, "PortNumber": Int(port.bigEndian)])
         guard try receive(fd)["Number"] as? Int == 0 else {
             close(fd)
-            throw Failure(tr("Open ScreenPad or Yam Display on the iPad", "Ouvre ScreenPad ou Yam Display sur l’iPad"))
+            throw Failure(tr("Open GranPad or Yam Display on the iPad", "Ouvre GranPad ou Yam Display sur l’iPad"))
         }
         return fd  // from here on the socket is a raw TCP stream to the iPad app
     }
@@ -628,11 +628,11 @@ final class Session {
         let largest = model.sizes.max { $0.width < $1.width }!
         let descriptor = CGVirtualDisplayDescriptor()
         descriptor.queue = DispatchQueue.main
-        descriptor.name = "ScreenPad"
+        descriptor.name = "GranPad"
         descriptor.maxPixelsWide = UInt32(largest.width * 2)  // room for every size drawn at 2x (smoothing)
         descriptor.maxPixelsHigh = UInt32(largest.height * 2)
         descriptor.sizeInMillimeters = CGSize(width: 160, height: 120)
-        descriptor.vendorID = 0x5350
+        descriptor.vendorID = 0x5350  // "SP", from the old name: kept so macOS keeps the display's arrangement
         descriptor.productID = 1
         descriptor.serialNum = 1
         let settings = CGVirtualDisplaySettings()
@@ -681,8 +681,8 @@ final class Session {
             } catch {
                 print("\(Date()) capture start failed: \(error)")
                 guard CGPreflightScreenCaptureAccess() else {
-                    return menuBar.show(tr("Allow Screen Recording, then reopen ScreenPad",
-                                           "Autorise l’enregistrement de l’écran, puis relance ScreenPad"), needsPermission: true)
+                    return menuBar.show(tr("Allow Screen Recording, then reopen GranPad",
+                                           "Autorise l’enregistrement de l’écran, puis relance GranPad"), needsPermission: true)
                 }
                 // Allowed, but the display can't be captured yet: Mac screens asleep (their waking restarts it), or
                 // just added. ponytail: retries every second while awake, no backoff.
@@ -747,7 +747,7 @@ final class MenuBar: NSObject {
         let icon = NSImage(named: "MenuBarIcon")
         icon?.isTemplate = true
         item.button?.image = icon
-        item.button?.toolTip = "ScreenPad"
+        item.button?.toolTip = "GranPad"
         for menuItem in [touchItem, blockMouseItem, smoothingItem, loginItem, permissionItem] { menuItem.target = self }
         permissionItem.isHidden = true
         sizeItem.submenu = NSMenu()
@@ -757,7 +757,7 @@ final class MenuBar: NSObject {
         menu.items = [statusLine, .separator(), sizeItem, smoothingItem, frameRateItem, bitRateItem, touchItem, blockMouseItem, .separator(),
                       loginItem,
                       permissionItem, .separator(),
-                      NSMenuItem(title: tr("Quit ScreenPad", "Quitter ScreenPad"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")]
+                      NSMenuItem(title: tr("Quit GranPad", "Quitter GranPad"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")]
         item.menu = menu
         show(tr("Starting…", "Démarrage…"))
         refresh()
@@ -880,7 +880,7 @@ final class MenuBar: NSObject {
 signal(SIGPIPE, SIG_IGN)
 if isatty(STDOUT_FILENO) == 0 {  // launched from Finder: keep a log of the last run
     let logs = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Logs")
-    let log = logs.appendingPathComponent("ScreenPad.log"), previous = logs.appendingPathComponent("ScreenPad.previous.log")
+    let log = logs.appendingPathComponent("GranPad.log"), previous = logs.appendingPathComponent("GranPad.previous.log")
     try? FileManager.default.removeItem(at: previous)
     try? FileManager.default.moveItem(at: log, to: previous)  // a relaunch must not erase what went wrong
     freopen(log.path, "w", stdout)
@@ -891,9 +891,9 @@ let app = NSApplication.shared
 app.setActivationPolicy(.accessory)  // menu bar only, no Dock icon (LSUIElement does the same for the bundle)
 if NSRunningApplication.runningApplications(withBundleIdentifier: Bundle.main.bundleIdentifier ?? "").count > 1 {
     let alert = NSAlert()
-    alert.messageText = tr("ScreenPad is already running", "ScreenPad tourne déjà")
-    alert.informativeText = tr("Another copy of ScreenPad is open: its icon is in the menu bar.",
-                               "Une autre copie de ScreenPad est ouverte : son icône est dans la barre des menus.")
+    alert.messageText = tr("GranPad is already running", "GranPad tourne déjà")
+    alert.informativeText = tr("Another copy of GranPad is open: its icon is in the menu bar.",
+                               "Une autre copie de GranPad est ouverte : son icône est dans la barre des menus.")
     alert.runModal()
     exit(0)
 }
@@ -928,7 +928,7 @@ link.onStatus = { text, active in DispatchQueue.main.async { menuBar.show(text, 
 link.onHello = { info in
     DispatchQueue.main.sync {
         session?.stop()
-        session = Session(model: Model(info: info), ownApp: info["screenPadVersion"] != nil)
+        session = Session(model: Model(info: info), ownApp: info["granPadVersion"] != nil || info["screenPadVersion"] != nil)  // the latter: before the rename
         guard let session else {
             menuBar.show(tr("Couldn’t create the virtual display", "Impossible de créer l’écran virtuel"))
             return nil
