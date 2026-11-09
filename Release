@@ -1,8 +1,8 @@
-Origin: ScreenPad
-Label: ScreenPad
+Origin: GranPad
+Label: GranPad
 Suite: stable
 Version: 1.0
 Codename: ios
 Architectures: iphoneos-arm
 Components: main
-Description: ScreenPad, an iPad as an extra display for the Mac
+Description: GranPad, an iPad as an extra display for the Mac
