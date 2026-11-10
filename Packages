@@ -1,6 +1,6 @@
 Package: fr.krnd.granpad
 Name: GranPad
-Version: 1.1.0
+Version: 1.1.1
 Architecture: iphoneos-arm
 Depends: mobilesubstrate, uikittools
 Conflicts: fr.krnd.screenpad
@@ -10,8 +10,8 @@ Maintainer: Kitround
 Author: Kitround
 Homepage: https://github.com/Kitround/GranPad
 Description: Use the iPad as an extra display for your Mac, over USB. Needs the GranPad Mac app.
-Filename: debs/granpad_1.1.0_iphoneos-arm.deb
-Size: 56230
-MD5sum: b9280d6bb0d12a985819305c24949116
-SHA256: 425915b533c7cd940dd8345738a3bb19b322171660c979b6ea47cfebdd54a8e2
+Filename: debs/granpad_1.1.1_iphoneos-arm.deb
+Size: 61094
+MD5sum: d082fb8cf3ca4b7ba1efff1643008221
+SHA256: 94f3bee2fee400267477d65a08de6fb39a4e94cce57270b5b4f66d7f20b8bb74
 
