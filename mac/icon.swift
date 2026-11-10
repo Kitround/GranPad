@@ -1,6 +1,7 @@
 // Draws GranPad's icons: `swift mac/icon.swift <output dir>` writes AppIcon.iconset/, MenuBarIcon(@2x).png
 // and the iPad app's AppIcon76x76(@2x).png and AppIcon83.5x83.5@2x.png.
-// The logo: a Mac display with an iPad in front of it, extending it.
+// The logo: a Mac display with an iPad in front of it, extending it; the iPad is an old gentleman ("Gran'Pa")
+// with reading glasses and a moustache.
 import AppKit
 
 let output = URL(fileURLWithPath: CommandLine.arguments[1])
@@ -75,11 +76,67 @@ func motif(_ s: CGFloat) {
     NSGraphicsContext.restoreGraphicsState()
     let screen = rect(448, 274, 364, 244, 22, scale: s)
     NSGradient(starting: color(0x7FE3FF), ending: color(0x6D5BFF))!.draw(in: screen, angle: -60)
-    // A window on the extended screen, so it reads as "more desktop".
-    color(0xFFFFFF, 0.85).setFill()
-    rect(486, 330, 190, 140, 14, scale: s).fill()
-    color(0x6D5BFF, 0.9).setFill()
-    rect(486, 446, 190, 24, 12, scale: s).fill()
+
+    // Gran'Pa: the iPad is the head, looking over its reading glasses, moustache hanging below.
+    let ink = color(0x1E1A5C)
+    ink.setFill()
+    for x: CGFloat in [562, 698] {
+        NSBezierPath(ovalIn: NSRect(x: (x - 17) * s, y: 462 * s, width: 34 * s, height: 34 * s)).fill()
+    }
+    readingGlasses(630, 400, r: 66, gap: 26, reach: 238, hook: 24, lineWidth: 16, ink: ink,
+                   lens: color(0xFFFFFF, 0.35), scale: s)
+    NSGraphicsContext.saveGraphicsState()
+    let shadow = NSShadow()
+    shadow.shadowColor = color(0x000000, 0.25)
+    shadow.shadowOffset = NSSize(width: 0, height: -4 * s)
+    shadow.shadowBlurRadius = 6 * s
+    shadow.set()
+    color(0xFFFFFF).setFill()
+    moustache(630, 262, 175, scale: s).fill()
+    NSGraphicsContext.restoreGraphicsState()
+}
+
+/// Half-moon reading glasses: lenses under the line `cy`, temples out to `reach` from the center, then a hook
+/// down over the ears.
+func readingGlasses(_ cx: CGFloat, _ cy: CGFloat, r: CGFloat, gap: CGFloat, reach: CGFloat, hook: CGFloat,
+                    lineWidth: CGFloat, ink: NSColor, lens: NSColor?, scale s: CGFloat) {
+    let frame = NSBezierPath()
+    for side: CGFloat in [-1, 1] {
+        let c = cx + side * (r + gap / 2)
+        let glass = NSBezierPath()
+        glass.appendArc(withCenter: NSPoint(x: c * s, y: cy * s), radius: r * s, startAngle: 180, endAngle: 360)
+        glass.close()
+        if let lens {
+            lens.setFill()
+            glass.fill()
+        }
+        frame.append(glass)
+        frame.move(to: NSPoint(x: (cx + side * (gap / 2 + 2 * r)) * s, y: cy * s))
+        frame.line(to: NSPoint(x: (cx + side * reach) * s, y: (cy + hook / 3) * s))
+        if hook > 0 { frame.line(to: NSPoint(x: (cx + side * (reach + hook / 2)) * s, y: (cy - hook) * s)) }
+    }
+    frame.move(to: NSPoint(x: (cx - gap / 2) * s, y: cy * s))
+    frame.line(to: NSPoint(x: (cx + gap / 2) * s, y: cy * s))
+    ink.setStroke()
+    frame.lineWidth = lineWidth * s
+    frame.lineCapStyle = .round
+    frame.lineJoinStyle = .round
+    frame.stroke()
+}
+
+/// Bushy moustache centered on (cx, cy), `w` = half width; the tips curl up.
+func moustache(_ cx: CGFloat, _ cy: CGFloat, _ w: CGFloat, scale s: CGFloat) -> NSBezierPath {
+    let path = NSBezierPath()
+    for side: CGFloat in [1, -1] {
+        func p(_ x: CGFloat, _ y: CGFloat) -> NSPoint { NSPoint(x: (cx + side * x * w) * s, y: (cy + y * w) * s) }
+        path.move(to: p(0, 0.10))
+        path.curve(to: p(0.78, 0.12), controlPoint1: p(0.20, 0.42), controlPoint2: p(0.58, 0.40))
+        path.curve(to: p(1.02, 0.32), controlPoint1: p(0.92, -0.02), controlPoint2: p(1.06, 0.12))
+        path.curve(to: p(0.52, -0.20), controlPoint1: p(1.04, -0.04), controlPoint2: p(0.84, -0.24))
+        path.curve(to: p(0, -0.02), controlPoint1: p(0.28, -0.17), controlPoint2: p(0.10, -0.10))
+        path.close()
+    }
+    return path
 }
 
 /// iPad app icon: the same tile, square and full-bleed (iOS rounds the corners itself).
